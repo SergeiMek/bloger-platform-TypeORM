@@ -1,5 +1,5 @@
 //dto для боди при создании юзера. Сюда могут быть добавлены декораторы swagger
-import { IsString, Length, Matches } from 'class-validator';
+import { IsString, IsUUID, Length, Matches } from 'class-validator';
 
 export class CreateUserInputDto {
   @Matches('^[a-zA-Z0-9_-]*$')
@@ -9,6 +9,11 @@ export class CreateUserInputDto {
   password: string;
   @Matches('^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$')
   email: string;
+}
+
+export class userIdDto {
+  @IsUUID()
+  id: string;
 }
 
 export class LoginInputDto {

@@ -6,11 +6,11 @@ export class UserDocument {
   email: string;
   passwordHash: string;
   createdAt: string;
-  confirmationCode: string | null;
-  expirationData: Date | null;
+  confirmationCode: string | undefined;
+  expirationData: Date | undefined;
   isConfirmed: boolean;
-  recoveryCode: string | null;
-  expirationDateCode: Date | null;
+  recoveryCode: string | undefined;
+  expirationDateCode: Date | undefined;
   passwordSalt: string;
 }
 
@@ -20,7 +20,7 @@ export class UserEntity {
   id: string;
   @Column({ unique: true })
   login: string;
-  @Column({ unique: true })
+  @Column({ unique: true, collation: 'C' })
   email: string;
   @Column()
   passwordHash: string;

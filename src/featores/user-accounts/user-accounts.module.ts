@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UsersController } from './api/users.controller';
 import { UsersService } from './application/users.service';
-import { UsersRepository } from './infrastructure/users.repository';
+import { UsersRepo } from './infrastructure/users-repo';
 import { UsersQueryRepository } from './infrastructure/query/users.query-repository';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
@@ -28,6 +28,7 @@ import { ChangePasswordUseCase } from './use-cases/changePasswordUseCase';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './domain/user.entity';
+import { DeviceEntity } from './domain/device.entity';
 
 const useCases = [
   ValidateUserUseCase,
@@ -43,7 +44,7 @@ const adapters = [];
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, DeviceEntity]),
     PassportModule,
     JwtModule.register({
       secret: 'access-token-secret',
@@ -58,7 +59,7 @@ const adapters = [];
     DevicesService,
     DevicesRepository,
     DeviceQueryRepository,
-    UsersRepository,
+    UsersRepo,
     UsersQueryRepository,
     AuthQueryRepository,
     AuthService,
@@ -68,6 +69,6 @@ const adapters = [];
     JwtStrategy,
     BasicStrategy,
   ],
-  exports: [JwtStrategy, UsersRepository],
+  exports: [JwtStrategy, UsersRepo],
 })
 export class UserAccountsModule {}

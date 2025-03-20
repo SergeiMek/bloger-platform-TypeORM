@@ -1,6 +1,9 @@
 import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { isValidObjectId, Types } from 'mongoose';
-import { BadRequestDomainException } from '../exceptions/domain-exceptions';
+import {
+  BadRequestDomainException,
+  NotFoundDomainException,
+} from '../exceptions/domain-exceptions';
 
 @Injectable()
 export class ObjectIdValidationTransformationPipe implements PipeTransform {
@@ -26,11 +29,9 @@ export class ObjectIdValidationTransformationPipe implements PipeTransform {
 export class ObjectIdValidationPipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata): any {
     // Проверяем, что тип данных в декораторе — ObjectId
-
-    if (!isValidObjectId(value)) {
-      throw BadRequestDomainException.create(`Invalid ObjectId: ${value}`);
+    if (metadata.type === 'param' && value.replace(/-/g, '').length !== 32) {
+      throw NotFoundDomainException.create('id');
     }
-
     // Если тип не ObjectId, возвращаем значение без изменений
     return value;
   }

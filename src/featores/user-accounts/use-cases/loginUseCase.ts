@@ -22,12 +22,12 @@ export class LoginUseCase implements ICommandHandler<LoginUseCommand> {
     const accessToken = this.jwtService.sign(
       { id: command.dto.userId, deviceId: command.deviceId } as UserContextDto,
       {
-        expiresIn: '350s',
+        expiresIn: '10s',
       },
     );
     const refreshToken = this.jwtService.sign(
       { id: command.dto.userId, deviceId: command.deviceId } as UserContextDto,
-      { expiresIn: '700s' },
+      { expiresIn: '20s' },
     );
 
     const deviceDto = {

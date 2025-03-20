@@ -8,7 +8,8 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CreateDeviceTdo } from '../../bloggers-platform/dto/create-device.tdo';
 import { v4 as uuidv4 } from 'uuid';
-import { DeviseDocument } from '../domain/device.entity';
+import { DeviceEntity, DeviseDocument } from '../domain/device.entity';
+import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class DevicesService {
@@ -28,8 +29,8 @@ export class DevicesService {
     const deviceId = newRefreshTokenObj.deviceId;
     const expirationDate = newRefreshTokenObj.exp;
     const issuedAt = newRefreshTokenObj.iat;
-    const deviseDto: DeviseDocument = {
-      id: uuidv4(),
+    const deviseDto: DeepPartial<DeviceEntity> = {
+      // id: uuidv4(),
       ip: dto.ip,
       title: dto.userAgent,
       userId,

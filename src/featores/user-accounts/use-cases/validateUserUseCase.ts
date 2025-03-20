@@ -1,5 +1,5 @@
 import { UserContextDto } from '../guards/dto/user-context.dto';
-import { UsersRepository } from '../infrastructure/users.repository';
+import { UsersRepo } from '../infrastructure/users-repo';
 import { CryptoService } from '../application/crypto.service';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
@@ -15,7 +15,7 @@ export class ValidateUserUseCase
   implements ICommandHandler<ValidateUserCommand>
 {
   constructor(
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private cryptoService: CryptoService,
   ) {}
   async execute(command: ValidateUserCommand): Promise<UserContextDto | null> {

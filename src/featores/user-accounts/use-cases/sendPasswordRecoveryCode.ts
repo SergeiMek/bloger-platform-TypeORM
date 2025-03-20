@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { UsersRepository } from '../infrastructure/users.repository';
+import { UsersRepo } from '../infrastructure/users-repo';
 import { v4 as uuidv4 } from 'uuid';
 //import { add } from 'date-fns/index';
 import { add } from 'date-fns';
@@ -15,7 +15,7 @@ export class SendPasswordRecoveryCodeUseCase
   implements ICommandHandler<SendPasswordRecoveryCodeCommand>
 {
   constructor(
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private emailService: EmailService,
   ) {}
   async execute(command: SendPasswordRecoveryCodeCommand): Promise<void> {
@@ -26,7 +26,7 @@ export class SendPasswordRecoveryCodeUseCase
     const recoveryCode = uuidv4();
     const expirationDate = add(new Date(), { hours: 1 }).toISOString();
     try {
-      this.emailService.sendChangePasswordEmail(user.email, recoveryCode);
+      await this.emailService.sendChangePasswordEmail(user.email, recoveryCode);
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

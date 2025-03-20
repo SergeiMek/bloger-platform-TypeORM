@@ -8,14 +8,14 @@ import { PostsRepository } from '../infrastructure/posts.repository';
 import { BlogsRepository } from '../infrastructure/blogs.repository';
 import { isValidObjectId } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { UsersRepository } from '../../user-accounts/infrastructure/users.repository';
+import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
 
 @Injectable()
 export class PostsService {
   constructor(
     private postsRepository: PostsRepository,
     private blogsRepository: BlogsRepository,
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
   ) {}
 
   async createPost(dto: CreatePostDto): Promise<string> {

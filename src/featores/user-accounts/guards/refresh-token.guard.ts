@@ -25,7 +25,7 @@ export class RefreshTokenGuard implements CanActivate {
       if (!findDevise) {
         throw UnauthorizedDomainException.create();
       }
-      if (cookieRefreshTokenIat !== findDevise[' lastActiveDate']) {
+      if (cookieRefreshTokenIat !== findDevise.lastActiveDate) {
         throw UnauthorizedDomainException.create();
       }
       return true;

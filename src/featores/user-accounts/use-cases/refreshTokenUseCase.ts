@@ -32,12 +32,12 @@ export class RefreshTokenUseCase
     const newAccessToken = this.jwtService.sign(
       { id: userId, deviceId } as UserContextDto,
       {
-        expiresIn: '350s',
+        expiresIn: '10s',
       },
     );
     const newRefreshToken = this.jwtService.sign(
       { id: userId, deviceId } as UserContextDto,
-      { expiresIn: '700s' },
+      { expiresIn: '20s' },
     );
     const newRefreshTokenObj = this.jwtService.verify(newRefreshToken);
     const newIssuedAt = newRefreshTokenObj.iat;

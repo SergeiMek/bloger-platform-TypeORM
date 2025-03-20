@@ -4,22 +4,25 @@ import { BlogsQueryRepository } from '../bloggers-platform/infrastructure/query/
 import { BlogsRepository } from '../bloggers-platform/infrastructure/blogs.repository';
 import { Module } from '@nestjs/common';
 import { UsersQueryRepository } from '../user-accounts/infrastructure/query/users.query-repository';
-import { UsersRepository } from '../user-accounts/infrastructure/users.repository';
+import { UsersRepo } from '../user-accounts/infrastructure/users-repo';
 import { UsersService } from '../user-accounts/application/users.service';
 import { EmailService } from '../notifications/email.service';
 import { PostsRepository } from '../bloggers-platform/infrastructure/posts.repository';
 import { PostsQueryRepository } from '../bloggers-platform/infrastructure/query/posts.query-repository';
 import { PostsService } from '../bloggers-platform/application/posts.service';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../user-accounts/domain/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [],
+  imports: [TypeOrmModule.forFeature([UserEntity])],
   controllers: [SuperAdminController],
   providers: [
     BlogsService,
     BlogsQueryRepository,
     BlogsRepository,
     UsersQueryRepository,
-    UsersRepository,
+    UsersRepo,
     BlogsService,
     BlogsQueryRepository,
     UsersService,

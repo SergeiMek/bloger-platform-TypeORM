@@ -6,21 +6,18 @@ import { BlogsRepository } from './infrastructure/blogs.repository';
 import { PostsRepository } from './infrastructure/posts.repository';
 import { PostsQueryRepository } from './infrastructure/query/posts.query-repository';
 import { PostsService } from './application/posts.service';
-import { UsersRepository } from '../user-accounts/infrastructure/users.repository';
+import { UsersRepo } from '../user-accounts/infrastructure/users-repo';
 import { BlogIsExistConstraint } from './validate/blogId-is-exist.decorator';
 import { PostsController } from './api/posts.controller';
 import { CommentsService } from './application/comments.service';
 import { CommentsQueryRepository } from './infrastructure/query/comments.query-repository';
 import { CommentsRepository } from './infrastructure/comments.repository';
 import { CommentsController } from './api/comments.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from '../user-accounts/domain/user.entity';
 
 @Module({
-  imports: [
-    /*MongooseModule.forFeature([
-      { name: Comment.name, schema: CommentSchema },
-      // { name: User.name, schema: UserSchema },
-    ]),*/
-  ],
+  imports: [TypeOrmModule.forFeature([UserEntity])],
   controllers: [BlogsController, PostsController, CommentsController],
   providers: [
     BlogsService,
@@ -32,7 +29,7 @@ import { CommentsController } from './api/comments.controller';
     CommentsService,
     CommentsRepository,
     CommentsQueryRepository,
-    UsersRepository,
+    UsersRepo,
     BlogIsExistConstraint,
   ],
   exports: [],

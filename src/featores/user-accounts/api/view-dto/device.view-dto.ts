@@ -10,10 +10,7 @@ export class DeviceViewDto {
     const dto = new DeviceViewDto();
     dto.ip = device.ip;
     dto.title = device.title;
-    //dto.lastActiveDate = device.lastActiveDate.toString();
-    dto.lastActiveDate = new Date(
-      device[' lastActiveDate'] * 1000,
-    ).toISOString();
+    dto.lastActiveDate = new Date(device.lastActiveDate * 1000).toISOString();
     dto.deviceId = device.deviceId;
 
     return dto;

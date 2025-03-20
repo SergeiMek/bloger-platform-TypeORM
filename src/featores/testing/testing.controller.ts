@@ -1,25 +1,21 @@
 import { Controller, Delete, HttpCode, HttpStatus } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../user-accounts/domain/user.entity';
+import { DeviceEntity } from '../user-accounts/domain/device.entity';
 
 @Controller('testing')
 export class AllDeleteController {
-  constructor(@InjectDataSource() protected dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(DeviceEntity)
+    private readonly deviceRepository: Repository<DeviceEntity>,
+  ) {}
   @Delete('/all-data')
   @HttpCode(HttpStatus.NO_CONTENT)
   async dropDB(): Promise<void> {
-    /*await this.dataSource.query(`TRUNCATE TABLE  "Users"`);
-    await this.dataSource.query(`TRUNCATE TABLE  "Devise"`);
-    await this.dataSource.query(
-      `DELETE FROM "Posts" WHERE "blogId" IN (SELECT "id" FROM "Blogs")`,
-    );
-    await this.dataSource.query(`DELETE FROM "Blogs"`);*/
-    await this.dataSource.query(` DELETE FROM public."LikesForPosts"`);
-    await this.dataSource.query(` DELETE FROM public."LikesForComments"`);
-    await this.dataSource.query(` DELETE FROM public."Devise"`);
-    await this.dataSource.query(` DELETE FROM public."Comments"`);
-    await this.dataSource.query(` DELETE FROM public."Posts"`);
-    await this.dataSource.query(` DELETE FROM public."Blogs"`);
-    await this.dataSource.query(` DELETE FROM public."Users"`);
+    await this.usersRepository.clear();
+    await this.deviceRepository.clear();
   }
 }

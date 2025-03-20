@@ -8,7 +8,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SuperAdminAccountsModule } from './featores/superAdmin/superAdmin-platform.module';
 import { BlogAccountsModule } from './featores/bloggers-platform/bloggers-platform.module';
-
+import { UserEntity } from './featores/user-accounts/domain/user.entity';
+import { DeviceEntity } from './featores/user-accounts/domain/device.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { BlogAccountsModule } from './featores/bloggers-platform/bloggers-platfo
       autoLoadEntities: true,
       synchronize: true,
     }),
+    TypeOrmModule.forFeature([UserEntity, DeviceEntity]),
     ThrottlerModule.forRoot([
       {
         ttl: 10000,

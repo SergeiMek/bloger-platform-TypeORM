@@ -1,49 +1,23 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { DeviseDocument } from '../domain/device.entity';
-import {
-  BadRequestDomainException,
-  NotFoundDomainException,
-} from '../../../core/exceptions/domain-exceptions';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DeviceEntity, DeviseDocument } from '../domain/device.entity';
+import { NotFoundDomainException } from '../../../core/exceptions/domain-exceptions';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeepPartial, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class DevicesRepository {
-  constructor(@InjectDataSource() protected dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(DeviceEntity)
+    private readonly deviceRepository: Repository<DeviceEntity>,
+  ) {}
 
-  /*  async findOrNotFoundFail(id: string): Promise<DeviseDocument> {
-    /!*const device = await this.DeviceModel.findOne({
-      deviceId: id,
-    });*!/
-    const device = null;
-    if (!device) {
-      throw new NotFoundException('user not found');
-    }
-
-    return device;
-  }*/
-
-  async createDevise(dto: DeviseDocument) {
-    try {
-      await this.dataSource.query(`INSERT INTO public."Devise"(
-         id, ip, title, "userId", "deviceId", " lastActiveDate", " expirationDate")
-      VALUES ('${dto.id}', '${dto.ip}', '${dto.title}', '${dto.userId}', '${dto.deviceId}', '${dto.lastActiveDate}', '${dto.expirationDate}')`);
-    } catch (error: any) {
-      throw BadRequestDomainException.create(error);
-    }
+  async createDevise(dto: DeepPartial<DeviceEntity>) {
+    return await this.deviceRepository.save(dto);
   }
 
   async deleteDevice(id: string): Promise<boolean> {
-    try {
-      const result = await this.dataSource.query(
-        `DELETE FROM public."Devise"
-      WHERE "deviceId"= $1;`,
-        [id],
-      );
-      return result[1] === 1;
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    const result = await this.deviceRepository.delete({ deviceId: id });
+    return result.affected !== 0;
   }
 
   async updateDevise(
@@ -52,41 +26,27 @@ export class DevicesRepository {
     issuedAt: number,
   ): Promise<void> {
     try {
-      const query = `
-      UPDATE public."Devise"
-      SET " lastActiveDate" = $1, "ip"=$2
-      WHERE "deviceId" = $3
-    `;
-      const values = [issuedAt, ip, deviseId];
-      const result = await this.dataSource.query(query, values);
-      return result;
+      await this.deviceRepository.update(
+        { deviceId: deviseId },
+        {
+          lastActiveDate: issuedAt,
+          ip,
+        },
+      );
     } catch (error) {
-      debugger;
       throw NotFoundDomainException.create(error);
     }
   }
 
   async findDeviceByDeviceId(deviceId: string): Promise<DeviseDocument | null> {
-    try {
-      const result = await this.dataSource.query(
-        `SELECT * FROM public."Devise"
-      WHERE "deviceId"= $1;`,
-        [deviceId],
-      );
-      return result[0];
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    return await this.deviceRepository.findOne({
+      where: { deviceId },
+    });
   }
 
   async deleteAllOldDevices(currentDeviceId: string): Promise<void> {
     try {
-      const result = await this.dataSource.query(
-        `DELETE FROM public."Devise"
-                WHERE "deviceId" <> $1;`,
-        [currentDeviceId],
-      );
-      debugger;
+      await this.deviceRepository.delete({ deviceId: Not(currentDeviceId) });
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -10,7 +10,7 @@ import {
   UpdateLikeStatusDto,
 } from '../dto/create-comment.dto';
 import { PostsRepository } from '../infrastructure/posts.repository';
-import { UsersRepository } from '../../user-accounts/infrastructure/users.repository';
+import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
 import { CommentsQueryRepository } from '../infrastructure/query/comments.query-repository';
 import { CommentViewDto } from '../api/view-dto/comments.view-dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,7 +24,7 @@ export class CommentsService {
   constructor(
     private commentsRepository: CommentsRepository,
     private postsRepository: PostsRepository,
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private commentsQueryRepository: CommentsQueryRepository,
   ) {}
 

@@ -1,22 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { DeviceViewDto } from '../../api/view-dto/device.view-dto';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { DeviceEntity } from '../../domain/device.entity';
 
 @Injectable()
 export class DeviceQueryRepository {
-  constructor(@InjectDataSource() protected dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(DeviceEntity)
+    private readonly deviceRepository: Repository<DeviceEntity>,
+  ) {}
   async getAllSessionsForUser(userId: string): Promise<DeviceViewDto[]> {
     try {
-      const devise = await this.dataSource.query(
-        `SELECT * FROM public."Devise"
-      WHERE "userId"= $1;`,
-        [userId],
-      );
-      if (!devise) {
-        throw NotFoundDomainException.create('device not found');
-      }
+      const devise = await this.deviceRepository.find({ where: { userId } });
       return devise.map(DeviceViewDto.mapToView);
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);

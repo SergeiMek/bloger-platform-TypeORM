@@ -26,7 +26,6 @@ import { MeViewDto } from './view-dto/users.view-dto';
 import { AuthQueryRepository } from '../infrastructure/query/auth.query-repository';
 import { Response, Request } from 'express';
 import { RefreshTokenGuard } from '../guards/refresh-token.guard';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoginUseCase, LoginUseCommand } from '../use-cases/loginUseCase';
 import { CommandBus } from '@nestjs/cqrs';
 import { ChangePasswordCommand } from '../use-cases/changePasswordUseCase';
@@ -35,9 +34,10 @@ import { LogoutUseCommand } from '../use-cases/logoutUseCase';
 import { SendPasswordRecoveryCodeCommand } from '../use-cases/sendPasswordRecoveryCode';
 import { ResendConfirmationCodeCommand } from '../use-cases/resendConfirmationUseCase';
 import { RefreshTokenCommand } from '../use-cases/refreshTokenUseCase';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
-//@UseGuards(ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private usersService: UsersService,
@@ -56,7 +56,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   async login(
-    /*@Request() req: any*/
     @ExtractUserFromRequest() user: UserContextDto,
     @Res() response: Response,
     @Req() request: Request,
@@ -73,11 +72,8 @@ export class AuthController {
       .cookie('refreshToken', tokens.refreshToken, {
         secure: true,
         httpOnly: true,
-        // maxAge: 86400000,
       })
-      //.send({ accessToken: tokens.accessToken });
       .json({ accessToken: tokens.accessToken });
-    // return access_token;
   }
 
   @Post('logout')
@@ -152,10 +148,7 @@ export class AuthController {
       .cookie('refreshToken', newTokens.refreshToken, {
         secure: true,
         httpOnly: true,
-        // maxAge: 86400000,
       })
-      /*.send({ accessToken: newTokens.accessToken })
-      .sendStatus(200);*/
       .json({ accessToken: newTokens.accessToken });
   }
 }

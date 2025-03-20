@@ -3,19 +3,18 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import bcrypt from 'bcrypt';
 
 import { v4 as uuidv4 } from 'uuid';
-import { UsersRepository } from '../infrastructure/users.repository';
+import { UsersRepo } from '../infrastructure/users-repo';
 import { EmailService } from '../../notifications/email.service';
 import {
   BadRequestDomainException,
   NotFoundDomainException,
 } from '../../../core/exceptions/domain-exceptions';
+import { add } from 'date-fns';
 
 @Injectable()
 export class UsersService {
   constructor(
-    // @InjectModel(User.name)
-    // private UserModel: UserModelType,
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private emailService: EmailService,
   ) {}
 
@@ -38,20 +37,20 @@ export class UsersService {
     }
 
     const user = {
-      id: uuidv4(),
+      // id: uuidv4(),
       login: dto.login,
       email: dto.email,
       passwordHash: passwordHash,
       createdAt: new Date().toISOString(),
-      confirmationCode: null,
-      expirationData: null,
+      confirmationCode: undefined,
+      expirationData: undefined,
       isConfirmed: false,
-      recoveryCode: null,
-      expirationDateCode: null,
+      recoveryCode: undefined,
+      expirationDateCode: undefined,
       passwordSalt,
     };
-    await this.usersRepository.createUser(user);
-    return user.id;
+    const result = await this.usersRepository.createUser(user);
+    return result.id;
   }
   async deleteUser(id: string) {
     const result = await this.usersRepository.deleteUser(id);
@@ -81,9 +80,11 @@ export class UsersService {
     const confirmCode = uuidv4();
     const createdUserId = await this.createUser(dto);
     const user = await this.usersRepository.findById(createdUserId);
+    const data = add(new Date(), { hours: 1 }).toString();
     await this.usersRepository.updateConfirmationCode(
       confirmCode,
       createdUserId,
+      data,
     );
     try {
       await this.emailService.sendRegistrationEmail(dto.email, confirmCode);

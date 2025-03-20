@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { UsersRepository } from '../infrastructure/users.repository';
+import { UsersRepo } from '../infrastructure/users-repo';
 import { BadRequestDomainException } from '../../../core/exceptions/domain-exceptions';
 import { EmailService } from '../../notifications/email.service';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { add } from 'date-fns';
 
 export class ResendConfirmationCodeCommand {
   constructor(public email: string) {}
@@ -13,7 +14,7 @@ export class ResendConfirmationCodeUseCase
   implements ICommandHandler<ResendConfirmationCodeCommand>
 {
   constructor(
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private emailService: EmailService,
   ) {}
 
@@ -41,10 +42,11 @@ export class ResendConfirmationCodeUseCase
       .catch((error) => {
         throw BadRequestDomainException.create(error, 'email');
       });*/
-
+    const data = add(new Date(), { hours: 1 }).toString();
     await this.usersRepository.updateConfirmationCode(
       newConfirmationCode,
       user.id,
+      data,
     );
   }
 }

@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { UsersRepository } from '../infrastructure/users.repository';
+import { UsersRepo } from '../infrastructure/users-repo';
 import { JwtService } from '@nestjs/jwt';
 import { CryptoService } from './crypto.service';
 import { UserContextDto } from '../guards/dto/user-context.dto';
@@ -17,7 +17,7 @@ import { DevicesService } from './devices.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private jwtService: JwtService,
     private cryptoService: CryptoService,
     private emailService: EmailService,

@@ -15,7 +15,6 @@ import { DeviceQueryRepository } from '../infrastructure/query/device.query-repo
 import { DeviceViewDto } from './view-dto/device.view-dto';
 import { DevicesService } from '../application/devices.service';
 
-//@UseGuards(RefreshTokenGuard)
 @Controller('security')
 export class DeviceController {
   constructor(
@@ -29,7 +28,6 @@ export class DeviceController {
   async getAllSessionsForUser(@Req() req: Request): Promise<DeviceViewDto[]> {
     const refreshToken = req.cookies.refreshToken;
     const cookieRefreshTokeObj = await this.jwtService.verify(refreshToken);
-
     return this.deviseQueryRepository.getAllSessionsForUser(
       cookieRefreshTokeObj.id,
     );

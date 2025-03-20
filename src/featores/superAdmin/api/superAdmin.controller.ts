@@ -13,12 +13,15 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../../user-accounts/application/users.service';
 import { UsersQueryRepository } from '../../user-accounts/infrastructure/query/users.query-repository';
-import { UsersRepository } from '../../user-accounts/infrastructure/users.repository';
+import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
 import { BasicAuthGuard } from '../../user-accounts/guards/basic/basic-auth.guard';
 import { GetUsersQueryParams } from '../../user-accounts/api/input-dto/get-users-query-params.input-dto';
 import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
 import { UserViewDto } from '../../user-accounts/api/view-dto/users.view-dto';
-import { CreateUserInputDto } from '../../user-accounts/api/input-dto/users.input-dto';
+import {
+  CreateUserInputDto,
+  userIdDto,
+} from '../../user-accounts/api/input-dto/users.input-dto';
 import {
   CreateBlogForPostDto,
   CreateBlogInputDto,
@@ -38,7 +41,7 @@ export class SuperAdminController {
   constructor(
     private usersService: UsersService,
     private usersQueryRepository: UsersQueryRepository,
-    private usersRepository: UsersRepository,
+    private usersRepository: UsersRepo,
     private blogsService: BlogsService,
     private blogsQueryRepository: BlogsQueryRepository,
     private postsService: PostsService,
@@ -63,11 +66,12 @@ export class SuperAdminController {
   @Post('/users')
   async createUser(@Body() body: CreateUserInputDto): Promise<UserViewDto> {
     const userId = await this.usersService.createUser(body);
+    debugger;
     return this.usersQueryRepository.getUserById(userId);
   }
 
   @UseGuards(BasicAuthGuard)
-  @Delete('/users:/id')
+  @Delete('/users/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id') id: string): Promise<void> {
     return this.usersService.deleteUser(id);
@@ -77,7 +81,6 @@ export class SuperAdminController {
   @Post('/blogs')
   async createBlog(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.createBlog(body);
-    debugger;
     return this.blogsQueryRepository.findBlogById(blogId);
   }
 
