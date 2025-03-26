@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Post } from './posts.entity';
-import { LikesForComment } from './commentsLike.entity';
+import { Comment } from './comments.entity';
 
 export type CommentDocument = {
   id: string;
@@ -46,8 +46,14 @@ export type likeCountType = {
   dislikesCount: number;
 };
 
+enum Like {
+  NONE = 'None',
+  LIKE = 'Like',
+  DISLIKE = 'Dislike',
+}
+
 @Entity('comments')
-export class Comment {
+export class LikesForComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -59,19 +65,15 @@ export class Comment {
   @Column({ type: 'varchar', width: 300 })
   content: string;
 
+  @CreateDateColumn({ type: 'enum', enum: Like, default: Like.NONE })
+  likeStatus: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Post, (post) => post.comment, {
+  @ManyToOne(() => Comment, (comment) => comment.commentLike, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  post: Post;
-
-  @OneToMany(
-    () => LikesForComment,
-    (likesForComment) => likesForComment.comment,
-    { cascade: true },
-  )
-  commentLike: LikesForComment[];
+  comment: Comment;
 }

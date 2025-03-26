@@ -59,7 +59,7 @@ export class SuperAdminController {
   @Get('/tests/:id')
   async getTests(@Param('id') id: string) {
     // return this.usersQueryRepository.getAll(query);
-    return this.usersRepository.tests(id);
+    return this.postsQueryRepository.findPostById(id);
   }
 
   @UseGuards(BasicAuthGuard)

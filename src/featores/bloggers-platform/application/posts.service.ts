@@ -9,6 +9,8 @@ import { BlogsRepository } from '../infrastructure/blogs.repository';
 import { isValidObjectId } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
+import { Post } from '../domain/posts.entity';
+import { Blog } from '../domain/blogs.entity';
 
 @Injectable()
 export class PostsService {
@@ -21,17 +23,14 @@ export class PostsService {
   async createPost(dto: CreatePostDto): Promise<string> {
     const blog = await this.blogsRepository.findBlogById(dto.blogId);
 
-    const post = {
-      id: uuidv4(),
-      title: dto.title,
-      shortDescription: dto.shortDescription,
-      content: dto.content,
-      blogId: dto.blogId,
-      blogName: blog!.name,
-      createdAt: new Date().toISOString(),
-    };
-    await this.postsRepository.createPost(post);
-    return post.id;
+    const post = new Post();
+    post.title = dto.title;
+    post.shortDescription = dto.shortDescription;
+    post.content = dto.content;
+    post.createdAt = new Date();
+    post.blog = blog;
+    const savedPost = await this.postsRepository.createPost(post);
+    return savedPost.id;
   }
   async updatePost(
     postId: string,
@@ -40,7 +39,7 @@ export class PostsService {
   ): Promise<void> {
     const idBlog = blogId || body.blogId;
     await this.blogsRepository.findBlogById(idBlog!);
-    await this.postsRepository.updatePost(idBlog!, postId, body);
+    await this.postsRepository.updatePost(postId, body);
   }
   async updateLikesStatus(data: updateLikesPostDto): Promise<void> {
     await this.postsRepository.findPostById(data.postId);
@@ -68,7 +67,6 @@ export class PostsService {
       data.likeStatus,
     );
   }
-  async deletePost(id: string) {}
   async deletePostForBlog(postId: string, blogId: string) {
     await this.blogsRepository.findBlogById(blogId);
     await this.postsRepository.deletePost(postId);

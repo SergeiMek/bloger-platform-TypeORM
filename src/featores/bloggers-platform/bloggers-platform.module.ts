@@ -15,9 +15,11 @@ import { CommentsRepository } from './infrastructure/comments.repository';
 import { CommentsController } from './api/comments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../user-accounts/domain/user.entity';
+import { Blog } from './domain/blogs.entity';
+import { Post } from './domain/posts.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity, Blog, Post])],
   controllers: [BlogsController, PostsController, CommentsController],
   providers: [
     BlogsService,

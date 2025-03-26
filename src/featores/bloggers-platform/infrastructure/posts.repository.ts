@@ -1,39 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PostDocument } from '../domain/posts.entity';
+import { Post, PostDocument } from '../domain/posts.entity';
 import {
   BadRequestDomainException,
   NotFoundDomainException,
 } from '../../../core/exceptions/domain-exceptions';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { UpdatePostDto } from '../dto/create-post.dto';
 import { UserDocument } from '../../user-accounts/domain/user.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { Blog } from '../domain/blogs.entity';
 
 @Injectable()
 export class PostsRepository {
-  constructor(@InjectDataSource() protected dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() protected dataSource: DataSource,
+    @InjectRepository(Post)
+    private readonly postsRepository: Repository<Post>,
+  ) {}
 
-  async findPostById(id: string): Promise<UserDocument> {
-    const post = await this.dataSource.query(
-      `SELECT * FROM public."Posts"
-             WHERE "id" = $1`,
-      [id],
-    );
-    if (post.length === 0) {
-      throw new NotFoundException('user not found');
-    } else {
-      return post[0];
+  async findPostById(id: string): Promise<Post> {
+    const result = await this.postsRepository.findOne({ where: { id } });
+    if (!result) {
+      throw NotFoundDomainException.create('post not found');
     }
+    return result;
   }
-  async createPost(dto: PostDocument): Promise<void> {
-    try {
+  async createPost(dto: PostDocument): Promise<PostDocument> {
+    /*try {
       await this.dataSource.query(`INSERT INTO public."Posts"(
         id, "blogId", title, "shortDescription", content, "blogName", "createdAt")
       VALUES ('${dto.id}', '${dto.blogId}', '${dto.title}', '${dto.shortDescription}', '${dto.content}', '${dto.blogName}','${dto.createdAt}')`);
     } catch (error: any) {
       throw BadRequestDomainException.create(error);
-    }
+    }*/
+    return await this.postsRepository.save(dto);
   }
 
   async findUserInLikesInfo(
@@ -108,13 +109,9 @@ export class PostsRepository {
       throw NotFoundDomainException.create(error);
     }
   }
-  async updatePost(
-    blogId: string,
-    postId: string,
-    dto: UpdatePostDto,
-  ): Promise<boolean> {
+  async updatePost(postId: string, dto: UpdatePostDto): Promise<boolean> {
     await this.findPostById(postId);
-    try {
+    /* try {
       const query = `
       UPDATE public."Posts"
       SET "title" = $1, "shortDescription"=$2,"content"=$3,"blogId"=$4
@@ -130,11 +127,23 @@ export class PostsRepository {
       return await this.dataSource.query(query, values);
     } catch (error) {
       throw NotFoundDomainException.create(error);
+    }*/
+    const result = await this.postsRepository.update(
+      { id: postId },
+      {
+        title: dto.title,
+        shortDescription: dto.shortDescription,
+        content: dto.content,
+      },
+    );
+    if (result.affected === 0) {
+      throw NotFoundDomainException.create('error update ,blog not found');
     }
+    return true;
   }
   async deletePost(postId: string) {
     await this.findPostById(postId);
-    try {
+    /*try {
       const result = await this.dataSource.query(
         `DELETE FROM public."Posts"
       WHERE "id"= $1;`,
@@ -144,6 +153,8 @@ export class PostsRepository {
       return result[1] === 1;
     } catch (error) {
       throw NotFoundDomainException.create(error);
-    }
+    }*/
+    const result = await this.postsRepository.delete({ id: postId });
+    return result.affected !== 0;
   }
 }

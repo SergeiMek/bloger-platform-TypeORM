@@ -1,87 +1,116 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostViewDto } from '../../api/view-dto/posts.view-dto';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { getAllPostsDto } from '../../dto/create-post.dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { BlogsRepository } from '../blogs.repository';
 import { PostsRepository } from '../posts.repository';
-import { BadRequestDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { Post } from '../../domain/posts.entity';
+import { LikesForPost } from '../../domain/postsLike.entity';
+import { Blog } from '../../domain/blogs.entity';
+import { skip } from 'rxjs';
 
 @Injectable()
 export class PostsQueryRepository {
   constructor(
     @InjectDataSource() protected dataSource: DataSource,
-    private blogsRepository: BlogsRepository,
-    private postsRepository: PostsRepository,
+    @InjectRepository(Post)
+    private readonly postsRepository: Repository<Post>,
+    private postsRepo: PostsRepository,
+    private blogsRepo: BlogsRepository,
   ) {}
 
   async getAll(dto: getAllPostsDto): Promise<PaginatedViewDto<PostViewDto[]>> {
-    const filterConditions: any = [];
-    const filterConditionsParams: any = [];
+    const query = this.postsRepository.createQueryBuilder('p');
     if (dto.blogId) {
-      await this.blogsRepository.findBlogById(dto.blogId);
-      filterConditions.push(`"blogId" = $1`);
-      filterConditionsParams.push(dto.blogId);
+      query.where('p.blogId = :id', { id: dto.blogId });
     }
-
-    const whereClause =
-      filterConditions.length > 0 ? `WHERE ${filterConditions[0]}` : '';
     const sortDirection = dto.query.sortDirection === 'desc' ? 'DESC' : 'ASC';
-    let sortBy = '';
-    if (dto.query.sortBy === 'title' || dto.query.sortBy === 'blogName') {
-      sortBy = dto.query.sortBy;
-    } else {
-      sortBy = 'createdAt';
-    }
+    debugger;
+    const sortBy = ['name', 'description', 'blogName'].includes(
+      dto.query.sortBy,
+    )
+      ? dto.query.sortBy
+      : 'createdAt';
+    debugger;
     const offset = dto.query.calculateSkip();
-    const posts = await this.dataSource.query(
-      `
-       SELECT c.* , ( SELECT COUNT(*) FROM public."LikesForPosts"
-      WHERE "postId" = c."id" AND "likeStatus" = 'Like') as "likesCount" ,
-  ( SELECT COUNT(*) FROM public."LikesForPosts"
-      WHERE "postId" = c."id" AND "likeStatus" = 'Dislike') as "dislikesCount"  FROM public."Posts" c
-      ${whereClause}
-       ORDER BY "${sortBy}" ${sortDirection}
-  LIMIT ${dto.query.pageSize} OFFSET ${offset}
-    `,
-      filterConditionsParams,
-    );
-    const totalCountArray = await this.dataSource.query(
-      `
-      SELECT COUNT(*) FROM public."Posts"
-      ${whereClause}
-    `,
-      filterConditionsParams,
-    );
+    const pageSize = dto.query.pageSize;
+    /*const posts = await query
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Like'`),
+        'likesCount',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Dislike'`),
+        'dislikesCount',
+      )
+      .leftJoinAndSelect('p.blog', 'b')
+      .groupBy(`p.id,b.id`)
+      .orderBy(`p.${sortBy}`, sortDirection)
+      //.skip(offset) // не работает
+      // .take(pageSize)   не работает
+      .getRawMany();*/
+    query
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Like'`),
+        'likesCount',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Dislike'`),
+        'dislikesCount',
+      )
+      .leftJoinAndSelect('p.blog', 'b')
+      .groupBy(`p.id,b.id`);
 
-    const totalCount = parseInt(totalCountArray[0].count, 10);
+    let posts;
+    if (sortBy === 'blogName') {
+      debugger;
+      posts = await query.orderBy(`b.name`, sortDirection).getRawMany();
+      debugger;
+    } else {
+      posts = await query.orderBy(`p.${sortBy}`, sortDirection).getRawMany();
+    }
+
+    const paginationPosts = posts.slice(offset, offset + pageSize);
+
+    const totalCount = await query.getCount();
+
     const items: PostViewDto[] = await Promise.all(
-      posts.map(async (post) => {
+      paginationPosts.map(async (post): Promise<PostViewDto> => {
         let status;
-        const newestLikes = await this.postsRepository.getNewestLike(post.id);
+        //const newestLikes = await this.postsRepository.getNewestLike(post.id);
         if (dto.userId) {
+          // @ts-ignore
           status = await this.postsRepository.findUserLikeStatus(
-            post.id,
+            post.p_id,
             dto.userId,
           );
         }
-        /*const newestLikes = post.likesInfo.users
-          .filter((p) => p.likeStatus === 'Like')
-          .sort((a, b) => -a.addedAt.localeCompare(b.addedAt))
-          .map((p) => {
-            return {
-              addedAt: p.addedAt,
-              userId: p.userId,
-              login: p.userLogin,
-            };
-          })
-          .splice(0, 3);*/
 
-        return PostViewDto.mapToView(post, newestLikes, status);
+        return PostViewDto.mapToView(post, [], status);
       }),
     );
-
     return PaginatedViewDto.mapToView({
       items,
       totalCount,
@@ -89,31 +118,42 @@ export class PostsQueryRepository {
       size: dto.query.pageSize,
     });
   }
+
   async findPostById(id: string, userId?: string): Promise<PostViewDto> {
-    try {
-      const post = await this.dataSource.query(
-        `
-  SELECT c.*, 
-    (SELECT COUNT(*) FROM public."LikesForPosts" WHERE "postId" = c."id" AND "likeStatus" = 'Like') AS "likesCount",
-    (SELECT COUNT(*) FROM public."LikesForPosts" WHERE "postId" = c."id" AND "likeStatus" = 'Dislike') AS "dislikesCount"  
-  FROM public."Posts" c
-  WHERE "id" = $1
-  `,
-        [id],
-      );
-      if (post.length === 0) {
-        throw new NotFoundException('user not found');
-      }
-      let status;
-      //let likes;
-      const newestLikes = await this.postsRepository.getNewestLike(id);
-      if (userId) {
-        status = await this.postsRepository.findUserLikeStatus(id, userId);
-      }
-      return PostViewDto.mapToView(post[0], newestLikes, status);
-    } catch (error) {
-      //throw BadRequestDomainException.create(error);
+    const post = await this.postsRepository
+      .createQueryBuilder('p')
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Like'`),
+        'likesCount',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForPost, 'pl')
+            .where('pl.postId = p.id')
+            .andWhere(`pl.likeStatus = 'Dislike'`),
+        'dislikesCount',
+      )
+      .leftJoinAndSelect('p.blog', 'b')
+      .where('p.id = :id', { id })
+      .groupBy(`p.id,b.id`)
+      .getRawOne();
+    debugger;
+    if (!post) {
       throw new NotFoundException('post not found');
     }
+    let status;
+    // const newestLikes = await this.postsRepository.getNewestLike(id);
+    if (userId) {
+      // status = await this.postsRepo.findUserLikeStatus(id, userId);
+    }
+
+    return PostViewDto.mapToView(post, [], status);
   }
 }

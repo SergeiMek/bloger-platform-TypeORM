@@ -10,12 +10,13 @@ import { EmailService } from '../notifications/email.service';
 import { PostsRepository } from '../bloggers-platform/infrastructure/posts.repository';
 import { PostsQueryRepository } from '../bloggers-platform/infrastructure/query/posts.query-repository';
 import { PostsService } from '../bloggers-platform/application/posts.service';
-import { Repository } from 'typeorm';
 import { UserEntity } from '../user-accounts/domain/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Blog } from '../bloggers-platform/domain/blogs.entity';
+import { Post } from '../bloggers-platform/domain/posts.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity, Blog, Post])],
   controllers: [SuperAdminController],
   providers: [
     BlogsService,

@@ -27,20 +27,19 @@ export class PostViewDto {
     status?: string,
   ): PostViewDto {
     const dto = new PostViewDto();
-    dto.id = post.id;
-    dto.title = post.title;
-    dto.shortDescription = post.shortDescription;
-    dto.content = post.content;
-    dto.blogId = post.blogId;
-    dto.blogName = post.blogName;
-    dto.createdAt = post.createdAt;
+    dto.id = post.p_id;
+    dto.title = post.p_title;
+    dto.shortDescription = post.p_shortDescription;
+    dto.content = post.p_content;
+    dto.blogId = post.b_id;
+    dto.blogName = post.b_name;
+    dto.createdAt = post.p_created_at;
     dto.extendedLikesInfo = {
       likesCount: Number(post.likesCount),
       dislikesCount: Number(post.dislikesCount),
       myStatus: status || 'None',
       newestLikes: newestLikes || [],
     };
-    debugger;
     return dto;
   }
 }

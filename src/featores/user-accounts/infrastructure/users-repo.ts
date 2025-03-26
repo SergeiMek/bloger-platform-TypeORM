@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserDocument, UserEntity } from '../domain/user.entity';
 import { NotFoundDomainException } from '../../../core/exceptions/domain-exceptions';
-import { DataSource, DeepPartial, Repository } from 'typeorm';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DeepPartial, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersRepo {
   constructor(
-    @InjectDataSource()
-    protected dataSource: DataSource,
+    /*@InjectDataSource()
+    protected dataSource: DataSource,*/
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
   ) {}
@@ -22,12 +22,12 @@ export class UsersRepo {
   }
 
   async tests(id: string) {
-    const result = await this.dataSource.query(
+    /* const result = await this.dataSource.query(
       `SELECT * FROM public."Users"
              WHERE "id" = $1`,
       [id],
     );
-    return result;
+    return result;*/
   }
 
   async deleteUser(id: string): Promise<any> {

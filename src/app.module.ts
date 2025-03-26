@@ -10,6 +10,11 @@ import { SuperAdminAccountsModule } from './featores/superAdmin/superAdmin-platf
 import { BlogAccountsModule } from './featores/bloggers-platform/bloggers-platform.module';
 import { UserEntity } from './featores/user-accounts/domain/user.entity';
 import { DeviceEntity } from './featores/user-accounts/domain/device.entity';
+import { Blog } from './featores/bloggers-platform/domain/blogs.entity';
+import { Post } from './featores/bloggers-platform/domain/posts.entity';
+import { Comment } from './featores/bloggers-platform/domain/comments.entity';
+import { LikesForComment } from './featores/bloggers-platform/domain/commentsLike.entity';
+import { LikesForPost } from './featores/bloggers-platform/domain/postsLike.entity';
 
 @Module({
   imports: [
@@ -20,10 +25,18 @@ import { DeviceEntity } from './featores/user-accounts/domain/device.entity';
       username: 'nodejs',
       password: '1972',
       database: 'blog-platform-typeORM',
+      entities: [Blog, Post, Comment, LikesForComment, LikesForPost],
       autoLoadEntities: true,
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([UserEntity, DeviceEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      DeviceEntity,
+      Blog,
+      Post,
+      LikesForPost,
+      Comment,
+    ]),
     ThrottlerModule.forRoot([
       {
         ttl: 10000,
