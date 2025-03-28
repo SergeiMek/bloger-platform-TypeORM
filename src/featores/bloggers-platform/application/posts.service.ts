@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   CreatePostDto,
   updateLikesPostDto,
@@ -6,11 +6,9 @@ import {
 } from '../dto/create-post.dto';
 import { PostsRepository } from '../infrastructure/posts.repository';
 import { BlogsRepository } from '../infrastructure/blogs.repository';
-import { isValidObjectId } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
 import { Post } from '../domain/posts.entity';
-import { Blog } from '../domain/blogs.entity';
+import { LikesForPost } from '../domain/postsLike.entity';
 
 @Injectable()
 export class PostsService {
@@ -50,15 +48,18 @@ export class PostsService {
     );
 
     const user = await this.usersRepository.findById(data.userId);
-    const login = user!.login;
-
+    //const login = user!.login;
+    debugger;
     if (!foundUserLikeInfo) {
-      await this.postsRepository.pushUserInLikesInfo(
-        data.postId,
-        data.userId,
-        data.likeStatus,
-        login,
-      );
+      debugger;
+      const post = await this.postsRepository.findPostById(data.postId);
+      const newLike = new LikesForPost();
+      newLike.addedAt = new Date().toISOString();
+      newLike.userId = user.id;
+      newLike.userLogin = user.login;
+      newLike.likeStatus = data.likeStatus;
+      newLike.post = post;
+      await this.postsRepository.pushUserInLikesInfo(newLike);
     }
 
     await this.postsRepository.updateLikesStatus(

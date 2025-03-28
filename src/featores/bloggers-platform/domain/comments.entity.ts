@@ -14,8 +14,8 @@ export type CommentDocument = {
   id: string;
   userId: string;
   userLogin: string;
-  createdAt: string;
-  postId: string;
+  createdAt: Date;
+  //postId: string;
   content: string;
 };
 
@@ -30,16 +30,7 @@ export type CommentDocumentSQL = {
   dislikesCount: string;
 };
 
-export class CommentsBDTypeClass {
-  constructor(
-    public id: string,
-    public content: string,
-    public createdAt: string,
-    public postId: string,
-    public userId: string,
-    public userLogin: string,
-  ) {}
-}
+export class pushLike {}
 
 export type likeCountType = {
   likesCount: number;

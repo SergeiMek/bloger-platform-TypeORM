@@ -1,4 +1,9 @@
-import { PostDocument, PostDocumentSQL } from '../../domain/posts.entity';
+import {
+  newerLike,
+  PostDocument,
+  PostDocumentSQL,
+} from '../../domain/posts.entity';
+import { LikesForPost } from '../../domain/postsLike.entity';
 
 class usersForLikes {
   addedAt: string;
@@ -18,12 +23,12 @@ export class PostViewDto {
     likesCount: number;
     dislikesCount: number;
     myStatus: string;
-    newestLikes: [] | usersForLikes[];
+    newestLikes: Array<newerLike | []>;
   };
 
   static mapToView(
     post: PostDocumentSQL,
-    newestLikes: Array<usersForLikes>,
+    newestLikes: Array<newerLike | []>,
     status?: string,
   ): PostViewDto {
     const dto = new PostViewDto();

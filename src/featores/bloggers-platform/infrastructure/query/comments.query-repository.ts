@@ -1,19 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { CommentViewDto } from '../../api/view-dto/comments.view-dto';
-import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import {
+  BadRequestDomainException,
+  NotFoundDomainException,
+} from '../../../../core/exceptions/domain-exceptions';
 import { CommentsRepository } from '../comments.repository';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { GetCommentsQueryParams } from '../../api/input-dto/get-comment-query-params.input-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { PostsRepository } from '../posts.repository';
+import { Comment } from '../../domain/comments.entity';
+import { LikesForPost } from '../../domain/postsLike.entity';
+import { LikesForComment } from '../../domain/commentsLike.entity';
 
 @Injectable()
 export class CommentsQueryRepository {
   constructor(
     @InjectDataSource() protected dataSource: DataSource,
-    private postsRepository: PostsRepository,
-    private commentsRepository: CommentsRepository,
+    private postsRepo: PostsRepository,
+    private commentsRepo: CommentsRepository,
+    @InjectRepository(Comment)
+    private readonly commentsRepository: Repository<Comment>,
   ) {}
 
   async getAll(
@@ -21,58 +29,63 @@ export class CommentsQueryRepository {
     postId?: string,
     userId?: string,
   ): Promise<PaginatedViewDto<CommentViewDto[]>> {
-    const filterConditions: any = [];
-    const filterConditionsParams: any = [];
+    const qb = this.commentsRepository.createQueryBuilder('c');
     if (postId) {
-      await this.postsRepository.findPostById(postId);
-      filterConditions.push(`"postId" = $1`);
-      filterConditionsParams.push(postId);
+      await this.postsRepo.findPostById(postId);
+      qb.where('c.postId = :id', { id: postId });
     }
-
-    const whereClause =
-      filterConditions.length > 0 ? `WHERE ${filterConditions[0]}` : '';
     const sortDirection = query.sortDirection === 'desc' ? 'DESC' : 'ASC';
-    /*let sortBy = '';
-    if (dto.query.sortBy === 'title' || dto.query.sortBy === 'blogName') {
-      sortBy = dto.query.sortBy;
-    } else {
-      sortBy = 'createdAt';
-    }*/
     const offset = query.calculateSkip();
-    const comments = await this.dataSource.query(
-      `
-      SELECT c.* , ( SELECT COUNT(*) FROM public."LikesForComments"
-      WHERE "commentId" = c."id" AND "likeStatus" = 'Like') as "likesCount" ,
-  ( SELECT COUNT(*) FROM public."LikesForComments"
-      WHERE "commentId" = c."id" AND "likeStatus" = 'Dislike') as "dislikesCount"  FROM public."Comments" c
-      ${whereClause}
-       ORDER BY "createdAt" ${sortDirection}
-  LIMIT ${query.pageSize} OFFSET ${offset}
-    `,
-      filterConditionsParams,
-    );
-    const totalCountArray = await this.dataSource.query(
-      `
-      SELECT COUNT(*) FROM public."Comments"
-      ${whereClause}
-    `,
-      filterConditionsParams,
-    );
-    const totalCount = parseInt(totalCountArray[0].count, 10);
+    const pageSize = query.pageSize;
     debugger;
+    const comments = await qb
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForComment, 'cl')
+            .where('cl.commentId = c.id')
+            .andWhere(`cl.likeStatus = 'Like'`),
+        'likesCount',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForComment, 'cl')
+            .where('cl.commentId = c.id')
+            .andWhere(`cl.likeStatus = 'Dislike'`),
+        'dislikesCount',
+      )
+      .orderBy('c.createdAt', sortDirection)
+      .limit(pageSize)
+      .offset(offset)
+      .groupBy(`c.id`)
+      .getRawMany();
     const items: CommentViewDto[] = await Promise.all(
       comments.map(async (comment) => {
         let status;
         if (userId) {
-          status = await this.commentsRepository.findUserLikeStatus(
-            comment.id,
+          status = await this.commentsRepo.findUserLikeStatus(
+            comment.c_id,
             userId,
           );
         }
-        return CommentViewDto.mapToView(comment, status);
+        const commentMap = {
+          id: comment.c_id,
+          userId: comment.c_userId,
+          userLogin: comment.c_userLogin,
+          createdAt: comment.c_createdAt,
+          postId: comment.c_postId,
+          content: comment.c_content,
+          likesCount: comment.likesCount,
+          dislikesCount: comment.dislikesCount,
+        };
+
+        return CommentViewDto.mapToView(commentMap, status);
       }),
     );
-    debugger;
+    const totalCount = await qb.getCount();
     return PaginatedViewDto.mapToView({
       items,
       totalCount,
@@ -83,34 +96,44 @@ export class CommentsQueryRepository {
   async findCommentById(id: string, userId?: string): Promise<CommentViewDto> {
     let likeStatus;
     if (userId) {
-      likeStatus = await this.commentsRepository.findUserLikeStatus(id, userId);
+      likeStatus = await this.commentsRepo.findUserLikeStatus(id, userId);
     }
-
-    const comment = await this.dataSource.query(
-      `SELECT * FROM public."Comments"
-             WHERE "id" = $1`,
-      [id],
-    );
-    if (comment.length === 0) {
-      throw NotFoundDomainException.create('comment not found', 'commentId');
+    const comment = await this.commentsRepository
+      .createQueryBuilder('c')
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForComment, 'cl')
+            .where('cl.commentId = c.id')
+            .andWhere(`cl.likeStatus = 'Like'`),
+        'likesCount',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select(`COUNT(*)`)
+            .from(LikesForComment, 'cl')
+            .where('cl.commentId = c.id')
+            .andWhere(`cl.likeStatus = 'Dislike'`),
+        'dislikesCount',
+      )
+      .where('c.id = :id', { id })
+      .groupBy('c.id')
+      .getRawOne();
+    if (!comment) {
+      throw NotFoundDomainException.create('comment not found');
     }
-    const likesCount = await this.dataSource.query(
-      `
-      SELECT COUNT(*) FROM public."LikesForComments"
-      WHERE "commentId" = '${id}' AND "likeStatus" = 'Like'
-  `,
-    );
-    const dislikesCount = await this.dataSource.query(
-      `
-      SELECT COUNT(*) FROM public."LikesForComments"
-   WHERE "commentId" = '${id}' AND "likeStatus" = 'Dislike'
-    `,
-    );
-    const commentLike = {
-      ...comment[0],
-      likesCount: parseInt(likesCount[0].count, 10),
-      dislikesCount: parseInt(dislikesCount[0].count, 10),
+    const commentMap = {
+      id: comment.c_id,
+      userId: comment.c_userId,
+      userLogin: comment.c_userLogin,
+      createdAt: comment.c_createdAt,
+      postId: comment.c_postId,
+      content: comment.c_content,
+      likesCount: comment.likesCount,
+      dislikesCount: comment.dislikesCount,
     };
-    return CommentViewDto.mapToView(commentLike, likeStatus);
+    return CommentViewDto.mapToView(commentMap, likeStatus);
   }
 }

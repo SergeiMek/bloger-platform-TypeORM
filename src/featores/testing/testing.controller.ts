@@ -7,6 +7,7 @@ import { Blog } from '../bloggers-platform/domain/blogs.entity';
 import { Post } from '../bloggers-platform/domain/posts.entity';
 import { LikesForPost } from '../bloggers-platform/domain/postsLike.entity';
 import { Comment } from '../bloggers-platform/domain/comments.entity';
+import { LikesForComment } from '../bloggers-platform/domain/commentsLike.entity';
 
 @Controller('testing')
 export class AllDeleteController {
@@ -37,6 +38,7 @@ export class AllDeleteController {
       await this.blogsRepository.clear();*/
       await this.entityManager.delete(UserEntity, {});
       await this.entityManager.delete(DeviceEntity, {});
+      await this.entityManager.delete(LikesForComment, {});
       await this.entityManager.delete(LikesForPost, {});
       await this.entityManager.delete(Comment, {});
       await this.entityManager.delete(Post, {});

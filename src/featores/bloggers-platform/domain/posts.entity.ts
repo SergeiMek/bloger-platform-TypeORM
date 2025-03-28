@@ -21,6 +21,14 @@ export type PostDocument = {
   createdAt: Date;
 };
 
+export class newerLike {
+  addedAt: string;
+  login: string;
+  // id: string;
+  //likeStatus: string;
+  userId: string;
+}
+
 export type PostDocumentSQL = {
   p_id: string;
   p_title: string;

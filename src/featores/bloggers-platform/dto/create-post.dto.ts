@@ -41,3 +41,10 @@ export class getAllPostsDto {
   blogId?: string;
   userId?: string;
 }
+
+export class pushLikeNewLikeDto {
+  addedAt: string;
+  userId: string;
+  userLogin: string;
+  likeStatus: string;
+}

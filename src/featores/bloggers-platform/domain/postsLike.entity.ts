@@ -20,7 +20,7 @@ export class LikesForPost {
   id: string;
 
   @CreateDateColumn()
-  addedAt: Date;
+  addedAt: string;
 
   @Column({ nullable: false, type: 'varchar' })
   userId: string;

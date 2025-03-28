@@ -52,7 +52,7 @@ enum Like {
   DISLIKE = 'Dislike',
 }
 
-@Entity('comments')
+@Entity('likeForComment')
 export class LikesForComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -62,14 +62,11 @@ export class LikesForComment {
   @Column({ nullable: false })
   userLogin: string;
 
-  @Column({ type: 'varchar', width: 300 })
-  content: string;
-
   @CreateDateColumn({ type: 'enum', enum: Like, default: Like.NONE })
   likeStatus: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt: string;
 
   @ManyToOne(() => Comment, (comment) => comment.commentLike, {
     onDelete: 'CASCADE',

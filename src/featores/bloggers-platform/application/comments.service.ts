@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  CommentDocument,
-  CommentsBDTypeClass,
-} from '../domain/comments.entity';
+import { Comment } from '../domain/comments.entity';
 import { CommentsRepository } from '../infrastructure/comments.repository';
 import {
   CreateCommentDto,
@@ -13,11 +10,11 @@ import { PostsRepository } from '../infrastructure/posts.repository';
 import { UsersRepo } from '../../user-accounts/infrastructure/users-repo';
 import { CommentsQueryRepository } from '../infrastructure/query/comments.query-repository';
 import { CommentViewDto } from '../api/view-dto/comments.view-dto';
-import { v4 as uuidv4 } from 'uuid';
 import {
   ForbiddenDomainException,
   NotFoundDomainException,
 } from '../../../core/exceptions/domain-exceptions';
+import { LikesForComment } from '../domain/commentsLike.entity';
 
 @Injectable()
 export class CommentsService {
@@ -31,16 +28,18 @@ export class CommentsService {
   async createComment(dto: CreateCommentDto): Promise<CommentViewDto> {
     await this.postsRepository.findPostById(dto.postId);
     const user = await this.usersRepository.findById(dto.userId);
-    const comment: CommentDocument = new CommentsBDTypeClass(
-      uuidv4(),
-      dto.content,
-      new Date().toISOString(),
-      dto.postId,
+    const post = await this.postsRepository.findPostById(dto.postId);
+    const comment = new Comment();
+    comment.content = dto.content;
+    comment.userId = dto.userId;
+    comment.userLogin = user.login;
+    comment.post = post;
+
+    const createdComment = await this.commentsRepository.createComment(comment);
+    return await this.commentsQueryRepository.findCommentById(
+      createdComment.id,
       dto.userId,
-      user.login,
     );
-    await this.commentsRepository.createComment(comment);
-    return await this.commentsQueryRepository.findCommentById(comment.id);
   }
   async updateComment(dto: UpdateCommentDto): Promise<void> {
     const comment = await this.commentsRepository.findCommentById(
@@ -49,6 +48,7 @@ export class CommentsService {
     if (!comment) {
       throw NotFoundDomainException.create('comment not found');
     }
+    debugger;
     if (comment.userId !== dto.userId) {
       throw ForbiddenDomainException.create(
         'the comment does not belong to you',
@@ -57,7 +57,9 @@ export class CommentsService {
     await this.commentsRepository.updateComment(dto.commentId, dto.content);
   }
   async updateLikeStatus(dto: UpdateLikeStatusDto) {
-    await this.commentsRepository.findCommentById(dto.commentId);
+    const comment = await this.commentsRepository.findCommentById(
+      dto.commentId,
+    );
     const foundUserLikeIfo = await this.commentsRepository.findUserInLikeInfo(
       dto.commentId,
       dto.userId,
@@ -65,12 +67,14 @@ export class CommentsService {
     const user = await this.usersRepository.findById(dto.userId);
     debugger;
     if (!foundUserLikeIfo) {
-      await this.commentsRepository.pushUserInLikesInfo(
-        dto.commentId,
-        dto.userId,
-        dto.likeStatus,
-        user.login,
-      );
+      debugger;
+      const newLike = new LikesForComment();
+      newLike.userId = dto.userId;
+      newLike.userLogin = user.login;
+      newLike.likeStatus = 'None';
+      newLike.createdAt = new Date().toISOString();
+      newLike.comment = comment;
+      await this.commentsRepository.pushUserInLikesInfo(newLike);
     }
     await this.commentsRepository.updateLikesStatus(
       dto.commentId,

@@ -15,3 +15,10 @@ export class UpdateLikeStatusDto {
   likeStatus: string;
   commentId: string;
 }
+
+export class pushLikeNewLikeDto {
+  createdAt: string;
+  userId: string;
+  userLogin: string;
+  likeStatus: string;
+}

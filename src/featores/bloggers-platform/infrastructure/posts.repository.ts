@@ -6,10 +6,11 @@ import {
 } from '../../../core/exceptions/domain-exceptions';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { UpdatePostDto } from '../dto/create-post.dto';
+import { pushLikeNewLikeDto, UpdatePostDto } from '../dto/create-post.dto';
 import { UserDocument } from '../../user-accounts/domain/user.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { Blog } from '../domain/blogs.entity';
+import { LikesForPost } from '../domain/postsLike.entity';
 
 @Injectable()
 export class PostsRepository {
@@ -17,6 +18,8 @@ export class PostsRepository {
     @InjectDataSource() protected dataSource: DataSource,
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
+    @InjectRepository(LikesForPost)
+    private readonly likeForPostRepository: Repository<LikesForPost>,
   ) {}
 
   async findPostById(id: string): Promise<Post> {
@@ -40,54 +43,71 @@ export class PostsRepository {
   async findUserInLikesInfo(
     postId: string,
     userId: string,
-  ): Promise<PostDocument | null> {
-    try {
+  ): Promise<LikesForPost | null> {
+    /*try {
       const foundUser = await this.dataSource.query(`SELECT * 
           FROM public."LikesForPosts"
           WHERE "postId" = '${postId}' AND "userId" = '${userId}'`);
       return foundUser[0];
     } catch (error: any) {
       throw BadRequestDomainException.create(error);
+    }*/
+    try {
+      return await this.likeForPostRepository
+        .createQueryBuilder('l')
+        .where('l.postId = :postId', { postId })
+        .andWhere('l.userId = :userId', { userId })
+        .getOne();
+    } catch (error) {
+      throw BadRequestDomainException.create(error);
     }
   }
   async findUserLikeStatus(
     postId: string,
     userId: string,
-  ): Promise<PostDocument | null> {
-    try {
+  ): Promise<string | null> {
+    /*try {
       const foundUser = await this.dataSource.query(`SELECT * 
           FROM "LikesForPosts"
           WHERE "postId" = '${postId}' AND "userId" = '${userId}'`);
       return foundUser[0] ? foundUser[0].likeStatus : 'None';
     } catch (error: any) {
       throw BadRequestDomainException.create(error);
+    }*/
+    try {
+      const myLike = await this.likeForPostRepository
+        .createQueryBuilder('l')
+        .where('l.postId = :id', { id: postId })
+        .andWhere('l.userId =:userId', { userId })
+        .getOne();
+      return myLike ? myLike.likeStatus : 'None';
+    } catch (error) {
+      throw BadRequestDomainException.create(error);
     }
   }
   async getNewestLike(postId: string) {
     try {
-      return await this.dataSource
-        .query(`SELECT "addedAt", "userId", "userLogin" AS "login"
-          FROM public."LikesForPosts"
-          WHERE "postId" = '${postId}' AND "likeStatus" = 'Like'
-           ORDER BY "addedAt" DESC
-           LIMIT 3
-          `);
-    } catch (error: any) {
+      const result = await this.likeForPostRepository
+        .createQueryBuilder('l')
+        .where('l.postId = :id', { id: postId })
+        .andWhere('l.likeStatus = :likeStatus', { likeStatus: 'Like' })
+        .orderBy('l.addedAt', 'DESC')
+        .limit(3)
+        .getMany();
+      return result.map((l) => {
+        return {
+          addedAt: l.addedAt,
+          login: l.userLogin,
+          userId: l.userId,
+        };
+      });
+    } catch (error) {
       throw BadRequestDomainException.create(error);
     }
   }
-  async pushUserInLikesInfo(
-    postId: string,
-    userId: string,
-    likeStatus: string,
-    userLogin: string,
-  ): Promise<void> {
+  async pushUserInLikesInfo(dto: pushLikeNewLikeDto): Promise<void> {
     try {
-      const id = uuidv4();
-      const data = new Date().toISOString();
-      await this.dataSource.query(`INSERT INTO public."LikesForPosts"(
-        id, "postId", "addedAt", "userId", "userLogin", "likeStatus")
-      VALUES ('${id}', '${postId}', '${data}', '${userId}', '${userLogin}','${likeStatus}')`);
+      await this.likeForPostRepository.save(dto);
     } catch (error: any) {
       throw BadRequestDomainException.create(error);
     }
@@ -99,35 +119,20 @@ export class PostsRepository {
     likeStatus: string,
   ): Promise<void> {
     try {
-      const query = `
-      UPDATE public."LikesForPosts"
-      SET "likeStatus" = '${likeStatus}'
-       WHERE "postId" = '${postId}' AND "userId" = '${userId}'
-    `;
-      return await this.dataSource.query(query);
+      debugger;
+      await this.likeForPostRepository
+        .createQueryBuilder()
+        .update(LikesForPost)
+        .set({ likeStatus })
+        .where('"postId" = :postId', { postId })
+        .andWhere('"userId" = :userId', { userId })
+        .execute();
     } catch (error) {
       throw NotFoundDomainException.create(error);
     }
   }
   async updatePost(postId: string, dto: UpdatePostDto): Promise<boolean> {
     await this.findPostById(postId);
-    /* try {
-      const query = `
-      UPDATE public."Posts"
-      SET "title" = $1, "shortDescription"=$2,"content"=$3,"blogId"=$4
-      WHERE "id" = $5
-    `;
-      const values = [
-        dto.title,
-        dto.shortDescription,
-        dto.content,
-        blogId,
-        postId,
-      ];
-      return await this.dataSource.query(query, values);
-    } catch (error) {
-      throw NotFoundDomainException.create(error);
-    }*/
     const result = await this.postsRepository.update(
       { id: postId },
       {

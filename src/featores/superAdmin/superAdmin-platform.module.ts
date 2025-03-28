@@ -14,9 +14,10 @@ import { UserEntity } from '../user-accounts/domain/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Blog } from '../bloggers-platform/domain/blogs.entity';
 import { Post } from '../bloggers-platform/domain/posts.entity';
+import { LikesForPost } from '../bloggers-platform/domain/postsLike.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, Blog, Post])],
+  imports: [TypeOrmModule.forFeature([UserEntity, Blog, Post, LikesForPost])],
   controllers: [SuperAdminController],
   providers: [
     BlogsService,

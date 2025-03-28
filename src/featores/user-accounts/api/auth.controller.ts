@@ -37,7 +37,7 @@ import { RefreshTokenCommand } from '../use-cases/refreshTokenUseCase';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
-@UseGuards(ThrottlerGuard)
+//@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private usersService: UsersService,

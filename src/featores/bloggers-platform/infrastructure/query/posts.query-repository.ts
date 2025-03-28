@@ -8,8 +8,6 @@ import { BlogsRepository } from '../blogs.repository';
 import { PostsRepository } from '../posts.repository';
 import { Post } from '../../domain/posts.entity';
 import { LikesForPost } from '../../domain/postsLike.entity';
-import { Blog } from '../../domain/blogs.entity';
-import { skip } from 'rxjs';
 
 @Injectable()
 export class PostsQueryRepository {
@@ -36,7 +34,7 @@ export class PostsQueryRepository {
     debugger;
     const offset = dto.query.calculateSkip();
     const pageSize = dto.query.pageSize;
-    /*const posts = await query
+    const posts = await query
       .addSelect(
         (qb) =>
           qb
@@ -56,59 +54,30 @@ export class PostsQueryRepository {
         'dislikesCount',
       )
       .leftJoinAndSelect('p.blog', 'b')
+      .orderBy(
+        `${sortBy === 'blogName' ? 'b.name' : `p.${sortBy}`}`,
+        sortDirection,
+      )
+      .limit(pageSize)
+      .offset(offset)
       .groupBy(`p.id,b.id`)
-      .orderBy(`p.${sortBy}`, sortDirection)
-      //.skip(offset) // не работает
-      // .take(pageSize)   не работает
-      .getRawMany();*/
-    query
-      .addSelect(
-        (qb) =>
-          qb
-            .select(`COUNT(*)`)
-            .from(LikesForPost, 'pl')
-            .where('pl.postId = p.id')
-            .andWhere(`pl.likeStatus = 'Like'`),
-        'likesCount',
-      )
-      .addSelect(
-        (qb) =>
-          qb
-            .select(`COUNT(*)`)
-            .from(LikesForPost, 'pl')
-            .where('pl.postId = p.id')
-            .andWhere(`pl.likeStatus = 'Dislike'`),
-        'dislikesCount',
-      )
-      .leftJoinAndSelect('p.blog', 'b')
-      .groupBy(`p.id,b.id`);
-
-    let posts;
-    if (sortBy === 'blogName') {
-      debugger;
-      posts = await query.orderBy(`b.name`, sortDirection).getRawMany();
-      debugger;
-    } else {
-      posts = await query.orderBy(`p.${sortBy}`, sortDirection).getRawMany();
-    }
-
-    const paginationPosts = posts.slice(offset, offset + pageSize);
+      .getRawMany();
 
     const totalCount = await query.getCount();
 
     const items: PostViewDto[] = await Promise.all(
-      paginationPosts.map(async (post): Promise<PostViewDto> => {
+      posts.map(async (post): Promise<PostViewDto> => {
         let status;
-        //const newestLikes = await this.postsRepository.getNewestLike(post.id);
+        const newestLikes = await this.postsRepo.getNewestLike(post.p_id);
         if (dto.userId) {
-          // @ts-ignore
-          status = await this.postsRepository.findUserLikeStatus(
+          status = await this.postsRepo.findUserLikeStatus(
             post.p_id,
             dto.userId,
           );
         }
-
-        return PostViewDto.mapToView(post, [], status);
+        debugger;
+        // @ts-ignore
+        return PostViewDto.mapToView(post, newestLikes, status);
       }),
     );
     return PaginatedViewDto.mapToView({
@@ -144,16 +113,15 @@ export class PostsQueryRepository {
       .where('p.id = :id', { id })
       .groupBy(`p.id,b.id`)
       .getRawOne();
-    debugger;
     if (!post) {
       throw new NotFoundException('post not found');
     }
     let status;
-    // const newestLikes = await this.postsRepository.getNewestLike(id);
+    const newestLikes = await this.postsRepo.getNewestLike(id);
     if (userId) {
-      // status = await this.postsRepo.findUserLikeStatus(id, userId);
+      status = await this.postsRepo.findUserLikeStatus(id, userId);
     }
 
-    return PostViewDto.mapToView(post, [], status);
+    return PostViewDto.mapToView(post, newestLikes, status);
   }
 }
