@@ -7,27 +7,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 @Injectable()
 export class UsersRepo {
   constructor(
-    /*@InjectDataSource()
-    protected dataSource: DataSource,*/
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
-  async findById(id: string): Promise<UserDocument> {
+  async findById(id: string): Promise<UserEntity> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('user not found');
     }
     return user;
-  }
-
-  async tests(id: string) {
-    /* const result = await this.dataSource.query(
-      `SELECT * FROM public."Users"
-             WHERE "id" = $1`,
-      [id],
-    );
-    return result;*/
   }
 
   async deleteUser(id: string): Promise<any> {

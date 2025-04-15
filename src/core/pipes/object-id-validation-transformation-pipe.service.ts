@@ -30,7 +30,8 @@ export class ObjectIdValidationPipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata): any {
     // Проверяем, что тип данных в декораторе — ObjectId
     if (metadata.type === 'param' && value.replace(/-/g, '').length !== 32) {
-      throw NotFoundDomainException.create('id');
+      // throw NotFoundDomainException.create('id');
+      throw BadRequestDomainException.create('id');
     }
     // Если тип не ObjectId, возвращаем значение без изменений
     return value;

@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Answer } from '../../quiz-game/domain/answer.entity';
+import { Player } from '../../quiz-game/domain/player.entity';
 
 export class UserDocument {
   id: string;
@@ -38,4 +40,8 @@ export class UserEntity {
   expirationDateCode: Date;
   @Column()
   passwordSalt: string;
+  @OneToMany(() => Player, (player) => player.user, {
+    onDelete: 'CASCADE',
+  })
+  player: Player;
 }

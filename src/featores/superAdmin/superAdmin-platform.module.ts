@@ -15,10 +15,38 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Blog } from '../bloggers-platform/domain/blogs.entity';
 import { Post } from '../bloggers-platform/domain/posts.entity';
 import { LikesForPost } from '../bloggers-platform/domain/postsLike.entity';
+import { SuperAdminQuizController } from './api/superAdminQiuiz.controller';
+import { CqrsModule } from '@nestjs/cqrs';
+import { QuestionCreateUseCase } from './aplication/question-create.use-case';
+import { Question } from '../quiz-game/domain/question.entity';
+import { Answer } from '../quiz-game/domain/answer.entity';
+import { DataSourceRepository } from '../../core/repositories/data-source.repository';
+import { QuestionsQuizQueryRepository } from '../quiz-game/infrastructure/query/questionsQuiz.query-repository';
+import { QuestionsRepository } from '../quiz-game/infrastructure/questions.repository';
+import { QuestionDeleteUseCase } from './aplication/question-delete.use-case';
+import { QuestionUpdateUseCase } from './aplication/question-update.use-case';
+import { QuestionPublishUseCase } from './aplication/question-publish.use-case';
+
+const useCases = [
+  QuestionCreateUseCase,
+  QuestionDeleteUseCase,
+  QuestionUpdateUseCase,
+  QuestionPublishUseCase,
+];
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, Blog, Post, LikesForPost])],
-  controllers: [SuperAdminController],
+  imports: [
+    TypeOrmModule.forFeature([
+      UserEntity,
+      Blog,
+      Post,
+      LikesForPost,
+      Question,
+      Answer,
+    ]),
+    CqrsModule,
+  ],
+  controllers: [SuperAdminController, SuperAdminQuizController],
   providers: [
     BlogsService,
     BlogsQueryRepository,
@@ -33,7 +61,11 @@ import { LikesForPost } from '../bloggers-platform/domain/postsLike.entity';
     PostsRepository,
     PostsQueryRepository,
     PostsService,
+    ...useCases,
+    DataSourceRepository,
+    QuestionsQuizQueryRepository,
+    QuestionsRepository,
   ],
-  exports: [],
+  exports: [TypeOrmModule],
 })
 export class SuperAdminAccountsModule {}

@@ -16,5 +16,6 @@ export class BasicStrategy extends PassportStrategy(Strategy) {
       return true;
     }
     throw UnauthorizedDomainException.create();
+    //throw new UnauthorizedException();
   };
 }

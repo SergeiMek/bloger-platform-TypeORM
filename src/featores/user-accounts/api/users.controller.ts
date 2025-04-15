@@ -33,12 +33,6 @@ export class UsersController {
     return this.usersQueryRepository.getAll(query);
   }
 
-  @Get('/tests/:id')
-  async getTests(@Param('id') id: string) {
-    // return this.usersQueryRepository.getAll(query);
-    return this.usersRepository.tests(id);
-  }
-
   @UseGuards(BasicAuthGuard)
   @Post()
   async createUser(@Body() body: CreateUserInputDto): Promise<UserViewDto> {

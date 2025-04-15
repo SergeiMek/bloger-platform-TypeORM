@@ -18,10 +18,7 @@ import { BasicAuthGuard } from '../../user-accounts/guards/basic/basic-auth.guar
 import { GetUsersQueryParams } from '../../user-accounts/api/input-dto/get-users-query-params.input-dto';
 import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
 import { UserViewDto } from '../../user-accounts/api/view-dto/users.view-dto';
-import {
-  CreateUserInputDto,
-  userIdDto,
-} from '../../user-accounts/api/input-dto/users.input-dto';
+import { CreateUserInputDto } from '../../user-accounts/api/input-dto/users.input-dto';
 import {
   CreateBlogForPostDto,
   CreateBlogInputDto,
@@ -66,7 +63,6 @@ export class SuperAdminController {
   @Post('/users')
   async createUser(@Body() body: CreateUserInputDto): Promise<UserViewDto> {
     const userId = await this.usersService.createUser(body);
-    debugger;
     return this.usersQueryRepository.getUserById(userId);
   }
 

@@ -8,6 +8,8 @@ import { Post } from '../bloggers-platform/domain/posts.entity';
 import { LikesForPost } from '../bloggers-platform/domain/postsLike.entity';
 import { Comment } from '../bloggers-platform/domain/comments.entity';
 import { LikesForComment } from '../bloggers-platform/domain/commentsLike.entity';
+import { Answer } from '../quiz-game/domain/answer.entity';
+import { Question } from '../quiz-game/domain/question.entity';
 
 @Controller('testing')
 export class AllDeleteController {
@@ -43,6 +45,8 @@ export class AllDeleteController {
       await this.entityManager.delete(Comment, {});
       await this.entityManager.delete(Post, {});
       await this.entityManager.delete(Blog, {});
+      await this.entityManager.delete(Answer, {});
+      await this.entityManager.delete(Question, {});
     } catch (error) {
       console.log(error);
     }
