@@ -54,25 +54,6 @@ export class BlogsQueryRepository {
   async getPostsForBlog(
     dto: getAllPostsDto,
   ): Promise<PaginatedViewDto<PostViewDto[]>> {
-    /*const sortDirection = dto.query.sortDirection === 'desc' ? 'DESC' : 'ASC';
-    const offset = dto.query.calculateSkip();
-    const posts = await this.dataSource.query(
-      `
-      SELECT * FROM public."Posts"
-       WHERE "blogId"= $1
-       ORDER BY "createdAt" ${sortDirection}
-  LIMIT ${dto.query.pageSize} OFFSET ${offset}
-    `,
-      [dto.blogId],
-    );
-    const totalCountArray = await this.dataSource.query(
-      `
-      SELECT COUNT(*) FROM public."Posts"
-       WHERE "blogId"= $1
-    `,
-      [dto.blogId],
-    );
-    const totalCount = parseInt(totalCountArray[0].count, 10);*/
     const sortDirection = dto.query.sortDirection === 'desc' ? 'DESC' : 'ASC';
     const sortBy = ['name', 'description'].includes(dto.query.sortBy)
       ? dto.query.sortBy

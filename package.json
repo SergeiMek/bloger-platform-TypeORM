@@ -37,6 +37,7 @@
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "i": "^0.3.7",
     "install": "^0.13.0",
     "localtunnel": "^2.0.2",
