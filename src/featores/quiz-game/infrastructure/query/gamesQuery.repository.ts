@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Game } from '../../domain/game.entity';
 import { AnswerViewDto, GameViewDto } from '../../dto/game.view.dto';
 import { Answer } from '../../domain/answer.entity';
@@ -10,6 +10,8 @@ import { StatsViewDto } from '../../dto/stats.view.dto';
 import { Player } from '../../domain/player.entity';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { Question } from '../../domain/question.entity';
+import { GetTopQueryParams } from '../../input-dto/get-top-query-params.input-dto';
+import { TopViewDto } from '../../dto/top.view.dto';
 
 @Injectable()
 export class GamesQueryRepository {
@@ -19,6 +21,87 @@ export class GamesQueryRepository {
     @InjectRepository(Player)
     private readonly playersRepository: Repository<Player>,
   ) {}
+
+  async getTop(query: GetTopQueryParams) {
+    const top = await this.playersRepository
+      .createQueryBuilder('pl')
+      .select('pl.user', 'u_id')
+      .addSelect('u.login', 'u_login')
+      .addSelect((qb) => {
+        return qb
+          .select('sum(p.score)')
+          .from(Player, 'p')
+          .where(`p.userId = pl.user`);
+      }, 'sumScore')
+      .addSelect((qb) => {
+        return (
+          qb
+            .select(
+              'case when avg("p"."score") % 1 = 0 then cast(avg("p"."score") as integer) else round(avg("p"."score"), 2) end',
+            )
+            // .select('round(avg("p"."score"), 2)')
+            .from(Player, 'p')
+            .where(`p.userId = pl.user`)
+        );
+      }, 'avgScores')
+      .addSelect((qb) => {
+        return qb
+          .select('count(*)')
+          .from(Game, 'g')
+          .leftJoin('g.playerOne', 'po')
+          .leftJoin('g.playerTwo', 'pt')
+          .where(`po.userId = pl.user or pt.userId = pl.user`);
+      }, 'gamesCount')
+      .addSelect((qb) => {
+        return qb
+          .select('count(*)')
+          .from(Game, 'g')
+          .leftJoin('g.playerOne', 'po')
+          .leftJoin('g.playerTwo', 'pt')
+          .where(`(po.userId = pl.user or pt.userId = pl.user)`)
+          .andWhere(
+            `(po.userId = pl.user and po.score > pt.score or pt.userId = pl.user and pt.score > po.score)`,
+          );
+      }, 'winsCount')
+      .addSelect((qb) => {
+        return qb
+          .select('count(*)')
+          .from(Game, 'g')
+          .leftJoin('g.playerOne', 'po')
+          .leftJoin('g.playerTwo', 'pt')
+          .where(`(po.userId = pl.user or pt.userId = pl.user)`)
+          .andWhere(
+            `(po.userId = pl.user and po.score < pt.score or pt.userId = pl.user and pt.score < po.score)`,
+          );
+      }, 'lossesCount')
+      .addSelect((qb) => {
+        return qb
+          .select('count(*)')
+          .from(Game, 'g')
+          .leftJoin('g.playerOne', 'po')
+          .leftJoin('g.playerTwo', 'pt')
+          .where(`(po.userId = pl.user or pt.userId = pl.user)`)
+          .andWhere(
+            `(po.userId = pl.user and po.score = pt.score or pt.userId = pl.user and pt.score = po.score)`,
+          );
+      }, 'drawsCount')
+      .leftJoin('pl.user', 'u')
+      .groupBy('u_id, u_login');
+
+    const topResult = await this.addOrderByAndGet(top, query);
+
+    const totalCount = await this.playersRepository
+      .createQueryBuilder('pl')
+      .select('count(distinct "userId")', 'pl_count')
+      .getRawOne();
+
+    return PaginatedViewDto.mapToView({
+      page: query.pageNumber,
+      size: query.pageSize,
+      totalCount: Number(totalCount.pl_count),
+      items: await this.topMapping(topResult),
+    });
+  }
 
   async findGameById(gameId: string): Promise<GameViewDto | null> {
     try {
@@ -475,7 +558,80 @@ export class GamesQueryRepository {
       };
     });
   }
+  private async addOrderByAndGet(
+    builder: SelectQueryBuilder<Player>,
+    query: GetTopQueryParams,
+  ): Promise<any[]> {
+    if (query.sort.length === 1) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
 
+    if (query.sort.length === 2) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .addOrderBy(`"${query.sort[1][0]}"`, query.sort[1][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
+
+    if (query.sort.length === 3) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .addOrderBy(`"${query.sort[1][0]}"`, query.sort[1][1])
+        .addOrderBy(`"${query.sort[2][0]}"`, query.sort[2][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
+
+    if (query.sort.length === 4) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .addOrderBy(`"${query.sort[1][0]}"`, query.sort[1][1])
+        .addOrderBy(`"${query.sort[2][0]}"`, query.sort[2][1])
+        .addOrderBy(`"${query.sort[3][0]}"`, query.sort[3][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
+
+    if (query.sort.length === 5) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .addOrderBy(`"${query.sort[1][0]}"`, query.sort[1][1])
+        .addOrderBy(`"${query.sort[2][0]}"`, query.sort[2][1])
+        .addOrderBy(`"${query.sort[3][0]}"`, query.sort[3][1])
+        .addOrderBy(`"${query.sort[4][0]}"`, query.sort[4][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
+
+    if (query.sort.length === 6) {
+      return builder
+        .orderBy(`"${query.sort[0][0]}"`, query.sort[0][1])
+        .addOrderBy(`"${query.sort[1][0]}"`, query.sort[1][1])
+        .addOrderBy(`"${query.sort[2][0]}"`, query.sort[2][1])
+        .addOrderBy(`"${query.sort[3][0]}"`, query.sort[3][1])
+        .addOrderBy(`"${query.sort[4][0]}"`, query.sort[4][1])
+        .addOrderBy(`"${query.sort[5][0]}"`, query.sort[5][1])
+        .limit(query.pageSize)
+        .offset((query.pageNumber - 1) * query.pageSize)
+        .getRawMany();
+    }
+
+    return builder
+      .orderBy(`"avgScores"`, 'DESC')
+      .addOrderBy(`"sumScore"`, 'DESC')
+      .limit(query.pageSize)
+      .offset((query.pageNumber - 1) * query.pageSize)
+      .getRawMany();
+  }
   private async gamesRawMapping(games: any[]): Promise<GameViewDto[]> {
     let secondPlayerProgress: any = null;
     let questions = null;
@@ -540,6 +696,22 @@ export class GamesQueryRepository {
         pairCreatedDate: g.game_pair_created_date,
         startGameDate: g.game_start_game_date,
         finishGameDate: g.game_finish_game_date,
+      };
+    });
+  }
+  private async topMapping(array: any[]): Promise<TopViewDto[]> {
+    return array.map((a) => {
+      return {
+        sumScore: +a.sumScore,
+        avgScores: +a.avgScores,
+        gamesCount: +a.gamesCount,
+        winsCount: +a.winsCount,
+        lossesCount: +a.lossesCount,
+        drawsCount: +a.drawsCount,
+        player: {
+          id: a.u_id,
+          login: a.u_login,
+        },
       };
     });
   }

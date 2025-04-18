@@ -15,8 +15,14 @@ import { UserEntity } from '../user-accounts/domain/user.entity';
 import { GamesQueryRepository } from './infrastructure/query/gamesQuery.repository';
 import { AnswerSendUseCase } from './use-case/answer-send';
 import { GameFindUseCase } from './use-case/game-find';
+import { GameFinishUseCase } from './use-case/finish-game';
 
-const useCases = [UserConnect, AnswerSendUseCase, GameFindUseCase];
+const useCases = [
+  UserConnect,
+  AnswerSendUseCase,
+  GameFindUseCase,
+  GameFinishUseCase,
+];
 
 @Module({
   imports: [

@@ -40,6 +40,7 @@ export class AnswerSendUseCase implements ICommandHandler<AnswerSendCommand> {
     if (!currentGame) {
       throw ForbiddenDomainException.create('game not found ');
     }
+
     let currentPlayer = currentGame.playerOne;
     if (
       currentGame.playerTwo &&
@@ -84,6 +85,7 @@ export class AnswerSendUseCase implements ICommandHandler<AnswerSendCommand> {
       });
       await this.dataSourceRepository.save(currentGame);
     }
+
     if (
       (playerOneAnswersCount === 5 && playerTwoAnswersCount === 4) ||
       (playerOneAnswersCount === 4 && playerTwoAnswersCount === 5)

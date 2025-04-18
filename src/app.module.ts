@@ -20,6 +20,7 @@ import { Player } from './featores/quiz-game/domain/player.entity';
 import { Answer } from './featores/quiz-game/domain/answer.entity';
 import { Game } from './featores/quiz-game/domain/game.entity';
 import { Question } from './featores/quiz-game/domain/question.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 export const options: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -45,6 +46,7 @@ export const options: TypeOrmModuleOptions = {
 @Module({
   imports: [
     TypeOrmModule.forRoot(options),
+    ScheduleModule.forRoot(),
     /*TypeOrmModule.forFeature([
       UserEntity,
       DeviceEntity,

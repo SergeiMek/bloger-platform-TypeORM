@@ -18,6 +18,7 @@ import { AnswerInputDto } from '../dto/inputDto';
 import { AnswerSendCommand } from '../use-case/answer-send';
 import { GameFindQuery } from '../use-case/game-find';
 import { GetMyGamesQueryParams } from '../input-dto/get-myGames-query-params.input-dto';
+import { GetTopQueryParams } from '../input-dto/get-top-query-params.input-dto';
 
 @Controller('pair-game-quiz')
 export class QuizController {
@@ -25,6 +26,11 @@ export class QuizController {
     private commandBus: CommandBus,
     private readonly gamesQueryRepository: GamesQueryRepository,
   ) {}
+
+  @Get('users/top')
+  async getTop(@Query() query: GetTopQueryParams) {
+    return await this.gamesQueryRepository.getTop(query);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('pairs/my-current')

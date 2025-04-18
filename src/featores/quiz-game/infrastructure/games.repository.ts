@@ -54,4 +54,19 @@ export class GamesRepository {
       .addOrderBy('pta.added_at')
       .getOne();
   }
+  async findGamesToFinish(): Promise<Game[] | null> {
+    return await this.gamesRepository
+      .createQueryBuilder('game')
+      .leftJoinAndSelect('game.questions', 'gq')
+      .leftJoinAndSelect('game.playerOne', 'po')
+      .leftJoinAndSelect('po.user', 'pou')
+      .leftJoinAndSelect('po.answers', 'poa')
+      .leftJoinAndSelect('poa.question', 'poaq')
+      .leftJoinAndSelect('game.playerTwo', 'pt')
+      .leftJoinAndSelect('pt.user', 'ptu')
+      .leftJoinAndSelect('pt.answers', 'pta')
+      .leftJoinAndSelect('pta.question', 'ptaq')
+      .andWhere('game.finishingExpirationDate < now()')
+      .getMany();
+  }
 }
